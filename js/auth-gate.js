@@ -163,6 +163,17 @@ body.ez-gate-locked>*:not(#ez-auth-overlay):not(script){display:none!important}'
       err1.textContent = '';
       if (!email || email.indexOf('@') < 1) { err1.textContent = 'Enter a valid email address.'; return; }
       sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+      // 2026-06-01 (CSO NEW-C2): we keep shouldCreateUser:true here because
+      // not every consuming workspace pre-provisions its admin set in
+      // auth.users — flipping to false today would lock out first-time
+      // admins on those workspaces. Domain enforcement therefore relies
+      // ENTIRELY on the shared Supabase project's Before-User-Created
+      // Postgres auth hook, which whitelists elitez.asia + dhc.com.sg.
+      // Phase 2 (Derrick handoff, out-of-repo): add a CSO-17 canary that
+      // periodically calls signInWithOtp with a non-whitelisted address
+      // and alerts if the OTP is sent (i.e. the hook silently disappeared).
+      // Once every workspace's admin set is pre-provisioned, flip this
+      // flag to false and tighten the docs.
       var res = await sb.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true } });
       sendBtn.disabled = false; sendBtn.textContent = 'Send code';
       if (res.error) {
